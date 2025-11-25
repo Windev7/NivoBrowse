@@ -11,6 +11,8 @@
             color: white;
             X-Frame-Options: DENY
 Content-Security-Policy: frame-ancestors 'none';
+            frame.src = "https://corsproxy.io/?" + encodeURIComponent(url);
+
 
         }
         #toolbar {
