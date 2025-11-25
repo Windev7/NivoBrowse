@@ -1,92 +1,122 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Nivo Brows</title>
+
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
             background: #1e1e1e;
             color: white;
-            X-Frame-Options: DENY
-Content-Security-Policy: frame-ancestors 'none';
-            frame.src = "https://corsproxy.io/?" + encodeURIComponent(url);
-
-
+            font-family: Arial;
         }
+
         #toolbar {
             background: #333;
             padding: 10px;
             display: flex;
-            gap: 8px;
+            gap: 10px;
+            align-items: center;
         }
-        button {
-            padding: 6px 12px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        #urlBar {
+
+        input {
             flex: 1;
-            padding: 6px;
-            font-size: 14px;
-            border-radius: 4px;
+            padding: 8px;
+            border-radius: 5px;
             border: none;
+            font-size: 16px;
         }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+            border: none;
+            background: #555;
+            color: white;
+            border-radius: 5px;
+        }
+
         iframe {
             width: 100%;
             height: calc(100vh - 60px);
             border: none;
+            background: white;
         }
     </style>
 </head>
 
 <body>
 
-    <div id="toolbar">
-        <button onclick="goBack()">←</button>
-        <button onclick="goForward()">→</button>
-        <button onclick="reloadPage()">⟳</button>
-        <button onclick="goHome()">🏠</button>
-        <input type="text" id="urlBar" placeholder="Enter URL..." onkeydown="if(event.key==='Enter'){loadURL();}">
-        <button onclick="loadURL()">Go</button>
-    </div>
+<div id="toolbar">
+    <button onclick="goBack()">←</button>
+    <button onclick="goForward()">→</button>
+    <button onclick="reloadPage()">⟳</button>
+    <button onclick="goHome()">🏠</button>
 
-    <iframe id="browserFrame" src="https://www.google.com"></iframe>
+    <input id="urlBar" placeholder="Enter URL..." onkeydown="if(event.key==='Enter') loadURL();">
+    <button onclick="loadURL()">Go</button>
+</div>
 
-    <script>
-        const frame = document.getElementById("browserFrame");
-        const urlBar = document.getElementById("urlBar");
+<iframe id="browser" src="https://example.com"></iframe>
 
-        function loadURL() {
-            let url = urlBar.value;
-            if (!url.startsWith("http")) {
-                url = "https://" + url;
-            }
-            frame.src = url;
-        }
+<script>
+const frame = document.getElementById("browser");
+const urlBar = document.getElementById("urlBar");
 
-        function reloadPage() {
-            frame.src = frame.src;
-        }
+function normalize(url) {
+    if (!url.startsWith("http")) {
+        return "https://" + url;
+    }
+    return url;
+}
 
-        function goHome() {
-            frame.src = "https://www.google.com";
-        }
+function loadURL() {
+    const url = normalize(urlBar.value);
+    tryNormal(url);
+}
 
-        function goBack() {
-            frame.contentWindow.history.back();
-        }
+function tryNormal(url) {
+    frame.src = url;
 
-        function goForward() {
-            frame.contentWindow.history.forward();
-        }
+    // If iframe errors → try proxy
+    frame.onerror = () => tryProxy(url);
+}
 
-        // Update URL bar when iframe changes
-        frame.onload = () => {
-            urlBar.value = frame.contentWindow.location.href;
-        };
-    </script>
+function tryProxy(url) {
+    // Simple public proxy
+    frame.src = "https://corsproxy.io/?" + encodeURIComponent(url);
+}
+
+function reloadPage() {
+    frame.src = frame.src;
+}
+
+function goHome() {
+    frame.src = "https://example.com";
+}
+
+function goBack() {
+    try {
+        frame.contentWindow.history.back();
+    } catch {}
+}
+
+function goForward() {
+    try {
+        frame.contentWindow.history.forward();
+    } catch {}
+}
+
+// Update URL bar when frame loads
+frame.onload = () => {
+    try {
+        urlBar.value = frame.contentWindow.location.href;
+    } catch {
+        // Some sites block reading location, ignore
+    }
+};
+</script>
 
 </body>
 </html>
